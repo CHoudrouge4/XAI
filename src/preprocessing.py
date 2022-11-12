@@ -32,7 +32,7 @@ def prepare_targets(y):
 
 
 # Feature Selection
-def feature_selection(X, y, K):
+def feature_selection(X, y, K, feature_names):
     fs = SelectKBest(score_func=f_classif, k=K)
     fs.fit(X, y)
     X_fs = fs.transform(X)
@@ -42,7 +42,8 @@ def feature_selection(X, y, K):
     # plot the scores
     pyplot.bar([i for i in range(len(fs.scores_))], fs.scores_)
     pyplot.show()
-    return X_fs
+    feature_selected = fs.get_feature_names_out(feature_names)
+    return X_fs, feature_selected
 
 
 def treat_labor_data(file_name):

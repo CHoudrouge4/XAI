@@ -12,49 +12,28 @@ from preprocessing import *
 from models import *
 from calculations import *
 
-
-# implement cross validation
-def cross_validation(X, y, model, mode):
-# TODO use oversamoling/undersampling, give the option as param
-    #print(X)
-    l = []
-    oversample = RandomOverSampler(sampling_strategy='minority')
-    undersample = NearMiss(version=1, n_neighbors=3)
-    kfold = KFold(n_splits=10)
-    for train_index, test_index in kfold.split(X):
-        #print("TRAIN:", train_index, "TEST:", test_index)
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        # implement oversampling
-        if mode == 1:
-            X_train, y_train = oversample.fit_resample(X, y)
-        if mode == 2:
-            X_train, y_train = undersample.fit_resample(X, y)
-        (y_pred, X_proba), name = model(X_train, X_test, y_train, y_test)
-        print(name)
-        acc = accuracy_score(y_test, y_pred)
-        print(acc)
-        l.append(acc)
-    return l
-
-
-#X stands for the features, labes for the class in question and i is for the drug number
-# the function perform training and classication for a test and training data.
 def experiment(X, labels, i):
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_scaled = scaler.transform(X)
+    # scaler = StandardScaler()
+    # scaler.fit(X)
+    X_scaled = X #scaler.transform(X)
+
+
+    feature_names = ['Age', 'Gender', 'Education', 'Country', 'Ethnicity', 'Nscore', 'Escore', 'Oscore', 'Ascore', 'Cscore', 'Impulsive', 'SS']
 
     y_enc = prepare_targets(labels)
-    X_fs = feature_selection(X_scaled, labels, 5)
-    #X_result = model_DT(X_train_fs, X_test_fs, y_train_enc, y_test_enc)
+    X_fs, feature_selected = feature_selection(X_scaled, labels, 5, feature_names)
 
-    models = [model_DT, model_RF, model_SVM, model_KNN, model_MLP, model_GBC]
-    stats = []
-    for m in models:
-        l = cross_validation(X_fs, y_enc, m, 2)
-        stats.append(l)
-    get_cross_validation_table(stats)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_fs, y_enc, test_size=0.3, random_state=1)
+    # oversample = RandomOverSampler(sampling_strategy='minority')
+    # X_over, y_over = oversample.fit_resample(X_train, y_train)
+
+    (y_pred, X_proba), name = model_DT(X_train, X_test, y_train, y_test, feature_selected)
+    print(feature_selected)
+    print(X_test[0])
+    print(y_test[0])
+    acc = accuracy_score(y_test, y_pred)
+    print(acc)
 
 # perform the experiments for each drug.
 
@@ -74,64 +53,8 @@ def drug_data():
         experiment(X, labels, i)
         i = i + 1
 
-
-
-def labor_neg():
-    file_name = './data/labor-neg.data'
-    X_train, y_train = treat_labor_data(file_name)
-    file_name = './data/labor-neg.test'
-    X_test, y_test = treat_labor_data(file_name)
-    #print(X_train.shape)
-    # print(y_test)
-
-    X = np.append(X_train, X_test, axis=0)
-    Y = np.append(y_train, y_test, axis=0)
-    print(X.shape)
-    print(Y.shape)
-
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_scaled = scaler.transform(X)
-    print(X_scaled)
-    y_enc = prepare_targets(Y)
-
-    X_fs = feature_selection(X_scaled, y_enc, 4)
-
-    print(X_train.shape)
-    models = [model_DT, model_RF, model_SVM, model_KNN, model_MLP, model_GBC]
-    stats = []
-    for m in models:
-         l = cross_validation(X_fs, y_enc, m, 3)
-         stats.append(l)
-    get_cross_validation_table(stats)
-
-def heart_data():
-    file_name = './data/heart.csv'
-    print("Getting Data ...")
-    data = get_data(file_name)
-    #print(data)
-    print(data.shape)
-
-    X = data[:, 0:13]
-    print(X)
-    labels = data[:, 13]
-    # print(X)
-    print(labels)
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X_scaled = scaler.transform(X)
-    X_fs = feature_selection(X_scaled, labels, 7)
-    models = [model_DT, model_RF, model_SVM, model_KNN, model_MLP, model_GBC]
-    stats = []
-    for m in models:
-         l = cross_validation(X_fs, labels, m, 3)
-         stats.append(l)
-    get_cross_validation_table(stats)
-
 def main():
-    #drug_data()
-    #labor_neg()
-    #heart_data()
+    drug_data()
 
 if __name__ == "__main__":
     main()
